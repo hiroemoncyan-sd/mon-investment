@@ -7,12 +7,12 @@ import time
 st.set_page_config(page_title="My Investment App", layout="centered")
 
 # カスタマイズ：通貨単位（好きな文字に変えてね！）
-CURRENCY = "GOLD" 
+CURRENCY = "SD" 
 
 # --- データの初期化 ---
 if 'cash' not in st.session_state:
     st.session_state.cash = 1000000
-    st.session_state.companies = ["Mog Burger", "Eiffel Diner", "Teito Power", "Giga Net"]
+    st.session_state.companies = ["Hiroe cafe", "beau chat S&D", "monchi Power", "hiroemon Mobile"]
     st.session_state.prices = {name: [500.0] * 30 for name in st.session_state.companies}
     st.session_state.holds = {name: 0 for name in st.session_state.companies}
 
