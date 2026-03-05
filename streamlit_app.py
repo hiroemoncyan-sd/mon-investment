@@ -21,30 +21,25 @@ if 'cash' not in st.session_state:
 # --- 株価更新 & ハプニングロジック ---
 def update_prices():
     st.session_state.date += timedelta(days=1)
-    
     impact = 0
     target_company = ""
     
-    # ハプニング抽選（10%の確率）
     if random.random() < 0.1:
         event_type = random.choice(["good", "bad"])
         target_company = random.choice(st.session_state.companies)
         if event_type == "good":
             impact = random.uniform(0.1, 0.3)
-            st.session_state.news = f"🔥 【速報】{target_company}の新サービスが世界中で大ヒット！株価急騰！"
+            st.session_state.news = f"🔥 【速報】{target_company}の新サービスがヒット！"
         else:
             impact = random.uniform(-0.3, -0.1)
-            st.session_state.news = f"😱 【警告】{target_company}で不祥事発覚... 投資家が次々と売却中。"
+            st.session_state.news = f"😱 【警告】{target_company}で不祥事発覚..."
     else:
-        st.session_state.news = "☕ 現在、大きなニュースはありません。"
+        st.session_state.news = "☕ 大きなニュースはありません。"
 
     for name in st.session_state.companies:
         curr_p = st.session_state.prices[name][-1]
         vola = 0.08
-        
-        # 通常変動 + ハプニング影響（対象の会社だけ）
         event_effect = impact if name == target_company else 0
-        
         change = random.uniform(-vola, vola) + event_effect - (curr_p - 500) * 0.0001
         new_p = max(1.0, curr_p * (1 + change))
         st.session_state.prices[name].append(new_p)
@@ -73,23 +68,35 @@ for name in st.session_state.companies:
     current_price = price_list[-1]
     
     with st.container():
-        c1, c2 = st.columns([3, 1])
+        c1, c2 = st.columns([2, 1])
         with c1:
             st.subheader(f"{name}: {current_price:.2f}")
             st.line_chart(price_list, height=150)
         with c2:
-            st.write(f"Hold: {st.session_state.holds[name]}")
-            if st.button(f"Buy 1000", key=f"b_{name}"):
-                if st.session_state.cash >= current_price * 1000:
-                    st.session_state.cash -= current_price * 1000
-                    st.session_state.holds[name] += 1000
+            st.write(f"持株数: {st.session_state.holds[name]}")
+            
+            # --- ここが新機能：数量指定売買 ---
+            amount = st.number_input("数量", min_value=1, value=100, step=10, key=f"num_{name}")
+            
+            btn_buy, btn_sell = st.columns(2)
+            if btn_buy.button("買う", key=f"b_{name}"):
+                cost = current_price * amount
+                if st.session_state.cash >= cost:
+                    st.session_state.cash -= cost
+                    st.session_state.holds[name] += amount
                     st.rerun()
-            if st.button(f"Sell All", key=f"s_{name}"):
-                st.session_state.cash += current_price * st.session_state.holds[name]
-                st.session_state.holds[name] = 0
-                st.rerun()
+                else:
+                    st.error("お金が足りません！")
 
-# 更新
+            if btn_sell.button("売る", key=f"s_{name}"):
+                if st.session_state.holds[name] >= amount:
+                    st.session_state.cash += current_price * amount
+                    st.session_state.holds[name] -= amount
+                    st.rerun()
+                else:
+                    st.error("そんなに持っていません！")
+
+# 更新（1秒待機）
 update_prices()
 time.sleep(1)
 st.rerun()
