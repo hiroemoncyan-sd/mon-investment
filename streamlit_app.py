@@ -16,7 +16,6 @@ if 'cash' not in st.session_state:
     st.session_state.companies = ["Hiroe cafe", "beau chat S&D", "monchi Power", "hiroemon Mobile"]
     st.session_state.prices = {name: [500.0] * 30 for name in st.session_state.companies}
     st.session_state.holds = {name: 0 for name in st.session_state.companies}
-    # 取得単価（いくらで買ったか）を保存する辞書
     st.session_state.costs = {name: 0.0 for name in st.session_state.companies}
     st.session_state.date = datetime(2026, 3, 5)
     st.session_state.news = "市場は穏やかです。"
@@ -27,14 +26,14 @@ if st.sidebar.button("現在の資産をブラウザに保存"):
     save_data = {
         "cash": st.session_state.cash,
         "holds": st.session_state.holds,
-        "costs": st.session_state.costs, # 取得単価も保存
+        "costs": st.session_state.costs,
         "date": st.session_state.date.strftime("%Y-%m-%d")
     }
-    local_storage.set("my_investment_data_v2", save_data)
+    local_storage.set("my_investment_data_final", save_data)
     st.sidebar.success("ブラウザに保存しました！")
 
 if st.sidebar.button("保存したデータから再開"):
-    load_data = local_storage.get("my_investment_data_v2")
+    load_data = local_storage.get("my_investment_data_final")
     if load_data:
         st.session_state.cash = load_data["cash"]
         st.session_state.holds = load_data["holds"]
@@ -83,30 +82,4 @@ col_b.metric("Cash on Hand", f"{int(st.session_state.cash):,} {CURRENCY}")
 st.divider()
 
 for name in st.session_state.companies:
-    price_list = st.session_state.prices[name]
-    current_price = price_list[-1]
-    hold_count = st.session_state.holds[name]
-    avg_cost = st.session_state.costs[name]
-    
-    # 評価損益の計算
-    profit = (current_price - avg_cost) * hold_count if hold_count > 0 else 0
-    profit_icon = "🔥" if profit >= 0 else "❄️"
-    
-    with st.container():
-        c1, c2 = st.columns([2, 1])
-        with c1:
-            st.subheader(f"{name}: {current_price:.2f}")
-            st.line_chart(price_list, height=150)
-        with c2:
-            st.write(f"🤝 持株: {hold_count}")
-            if hold_count > 0:
-                st.write(f"📍 取得単価: {avg_cost:.2f}")
-                st.write(f"{profit_icon} 損益: {int(profit):,} {CURRENCY}")
-            
-            amount = st.number_input("数量", min_value=1, value=100, step=10, key=f"num_{name}")
-            
-            btn_buy, btn_sell = st.columns(2)
-            if btn_buy.button("買う", key=f"b_{name}"):
-                cost_total = current_price * amount
-                if st.session_state.cash >= cost_total:
-                    # 平均取得単価の更新
+    price_list = st.session_state
