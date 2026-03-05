@@ -2,11 +2,11 @@ import streamlit as st
 import numpy as np
 import random
 import time
+from datetime import datetime, timedelta
 
 # --- アプリの設定 ---
 st.set_page_config(page_title="My Investment App", layout="centered")
 
-# カスタマイズ：通貨単位（好きな文字に変えてね！）
 CURRENCY = "SD" 
 
 # --- データの初期化 ---
@@ -15,20 +15,43 @@ if 'cash' not in st.session_state:
     st.session_state.companies = ["Hiroe cafe", "beau chat S&D", "monchi Power", "hiroemon Mobile"]
     st.session_state.prices = {name: [500.0] * 30 for name in st.session_state.companies}
     st.session_state.holds = {name: 0 for name in st.session_state.companies}
+    st.session_state.date = datetime(2026, 3, 5) # 開始日
+    st.session_state.news = "市場は穏やかです。"
 
-# --- 株価更新ロジック ---
+# --- 株価更新 & ハプニングロジック ---
 def update_prices():
+    st.session_state.date += timedelta(days=1) # 1秒で1日進む
+    
+    # ハプニング抽選（10%の確率）
+    if random.random() < 0.1:
+        event_type = random.choice(["good", "bad"])
+        target = random.choice(st.session_state.companies)
+        if event_type == "good":
+            impact = random.uniform(0.1, 0.3)
+            st.session_state.news = f"🔥 【速報】{target}の新サービスが世界中で大ヒット！株価急騰！"
+        else:
+            impact = random.uniform(-0.3, -0.1)
+            st.session_state.news = f"😱 【警告】{target}で不祥事発覚... 投資家が次々と売却中。"
+    else:
+        impact = 0
+        st.session_state.news = "☕ 現在、大きなニュースはありません。"
+
     for name in st.session_state.companies:
         curr_p = st.session_state.prices[name][-1]
         vola = 0.08
-        change = random.uniform(-vola, vola) - (curr_p - 500) * 0.0001
-        new_p = max(1.0, curr_p + change)
+        # 通常変動 + ハプニング影響
+        event_effect = impact if name == target else 0
+        change = random.uniform(-vola, vola) + event_effect - (curr_p - 500) * 0.0001
+        new_p = max(1.0, curr_p * (1 + change))
         st.session_state.prices[name].append(new_p)
         if len(st.session_state.prices[name]) > 30:
             st.session_state.prices[name].pop(0)
 
-# タイトル
+# 画面表示
 st.title(f"💹 Asset Simulator ({CURRENCY})")
+
+# 日付とニュース
+st.info(f"📅 日付: {st.session_state.date.strftime('%Y年%m月%d日')} \n\n {st.session_state.news}")
 
 # 資産表示
 total_stock_val = sum(st.session_state.prices[name][-1] * st.session_state.holds[name] for name in st.session_state.companies)
@@ -62,7 +85,7 @@ for name in st.session_state.companies:
                 st.session_state.holds[name] = 0
                 st.rerun()
 
-# 最後に更新（Web版はリロードで動く）
+# 更新
 update_prices()
-time.sleep(1)
+time.sleep(1) # 1秒ごとに更新
 st.rerun()
